@@ -1,0 +1,26 @@
+*.abcl
+*.fasl
+*.dx32fsl
+*.dx64fsl
+*.lx32fsl
+*.lx64fsl
+*.x86f
+*~
+.#*
+.*.sw[a-z]
+/.slime_paste
+/.vagrant/
+/scratch.lisp
+/*.log
+TODO
+
+
+/lighttpd-environment/test-data
+/.repl/ros_history
+
+/.qlot/
+/.bundle-libs/
+# ocicl
+/systems
+/docs/build/
+.qlot/

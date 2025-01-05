@@ -1,0 +1,12 @@
+{
+    repositories {
+        com.djhaskin.cliff {
+            uri "git@github.com:djha-skin/cliff.git"
+            default-branch "main"
+        }
+        com.djhaskin.nrdl {
+            uri "git@github.com:djha-skin/nrdl.git"
+            default-branch "main"
+        }
+    }
+}
