@@ -11,7 +11,7 @@
 (in-package #:cl-user)
 
 (defpackage
-  #:com.djhaskin.gag (:use #:cl)
+  #:com.djhaskin.git-down (:use #:cl)
   (:documentation
     "
     Nestable Readable Document Language
