@@ -1,10 +1,9 @@
 # git-down
 
-## Design Document
+## Design
 
-We use a hierarchical approach to configuration, in the usual way.
 I want to make a code downloader that cuts out the middle man as much as
-possible. 9/10 I just want the code on my laptop.
+possible. 9 times out of 10, "I just want the code" on my laptop.
 
 In order to download code from git as painlessly as possible, I need to know
 what subset of files to grab, an acceptable range of commits from which to grab
@@ -12,7 +11,78 @@ them, and what that code's dependencies are.
 
 Some mechanism must tell me the dependencies. Actually, everything.
 
-This is a build downloader tool. It's for builds.
+This is a build downloader tool. It's for builds. So the build tool will "tell
+me" stuff, but it doesn't _know_ that it will tell me stuff. This build tool is
+configurable with the `makeprg` key.
+
+That can tell me if the dependencies work together.
+
+But, how to tell me what to grab?
+
+Say I'm working with maven. Then maven just downloads stuff.
+
+OK but say I'm working with Ant. "Why?"
+
+OK fine. I don't want to use this maybe to download everything, but at least
+some of the dependencies are written by my good self or my company. (This tool
+doesn't address that anyway.) I want to (be able to) DOWN THEM ALL
+
+I need some way for the "outside world" to communicate what dependencies to
+download, and hopefully even a few refs if they can give them to me, or a range.
+
+Once I have that, the query tool, or perhaps `queryprg`, then I'm golden.
+
+
+```lisp
+;;; Let's use s(erapeum) and f(set) for funs.
+(defun resolve (make query present required)
+    (if (null required)
+      present
+      (let ((requirement (car required))
+            (rest-reqs (cdr required)))
+          (multiple-value-bind (repo-name repo-uri repo-refs)
+                                (query requirement)
+          (let ((usable-refs
+            (a:if-let ((provided-coordinate
+                         (f:@ provided repo-uri)))
+                  (resolve-conflict requirement repo-uri
+                    (coord-ref provided-coordinate))
+                repo-refs)))
+            (loop for ref in usable-refs
+                  for coordinate in (make-coordinate repo-name repo-uri ref)
+                  do
+                  ;; A LOT happens here. This checks something out to a ref,
+                  ;; inspects for packages using `(inspect-for-packages)`, and
+                  ;; copies those packages in to the production directory.
+                  (checkout repo-name repo-uri ref)
+                  ;; build tool
+                  ;; inspect-for-dependencies takes `requirement` which is
+                  ;; presumably a package spec. There could be multiple packages
+                  ;; in one repo, so the inspector needs to know what package to
+                  ;; inspect.
+                  (let ((dependencies (inspect-for-dependencies repo-name requirement))
+                        (implied-provided (f:with (coord-uri coordinate) coordinate provided))
+                        (implied-requirements (f:concat required dependencies)))
+                    
+                    (multiple-value-bind
+                      (status provided)
+                      (resolve (make query implied-provided
+                        implied-requirements))
+                        (when (and (eql status :successful)
+                                 (check-build repo-name))
+                          (return (values :successful
+                              implied-provided)))))
+                  finally
+                  (return :unsuccessful))))))
+```
+
+OK so the above is my sketch for the resolving program.
+
+
+Looking at that, there's obviously a bunch of unhappy paths to guard, inlining,
+etc. to do, but that's the basic gist of what's going on.
+
+
 
 registry, builder, package, version -> git URI, subfolder, sha
 
